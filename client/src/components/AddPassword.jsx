@@ -1,17 +1,49 @@
 import React, { useState } from "react";
+import { firestore } from "../firebase-config";
+import { collection, addDoc } from "firebase/firestore";
+import CryptoJS from "crypto-js";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AddPassword = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(" ");
-  const isFormFilled = email && password;
-  const [passrate,setPassrate] = useState(0);
-  const handleSubmit = (e) => {
+  const [website, setWebsite] = useState("");
+  const [password, setPassword] = useState("");
+  const [category, setCategory] = useState("");
+  const isFormFilled = website && password && category;
+  const [passrate, setPassrate] = useState(0);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const encryptedPassword = CryptoJS.AES.encrypt(password, "your-secret-key").toString();
+    const newPassword = {
+      website,
+      password: encryptedPassword,
+      category,
+    };
+    try {
+      const docRef = await addDoc(collection(firestore, "passwords"), newPassword);
+      console.log("Document written with ID:", docRef.id);
+      toast.success("Password for " + website + " added successfully!", {
+        position: "bottom-right",
+        autoClose: 5000,
+       
+      });
+      setWebsite("");
+      setPassword("");
+      setCategory("");
+      setPassrate(0);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      toast.error("Error adding Password! ", {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen ">
-      <div className="card transform transition duration-300 shadow-xl hover:shadow-2xl w-80 h-auto rounded-lg p-6 ">
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="card transform transition duration-300 shadow-xl hover:shadow-2xl w-80 h-auto rounded-lg p-6">
         <h2 className="card-title text-xl font-semibold text-center mb-6 text-green-500">
           Add New Password
         </h2>
@@ -28,10 +60,11 @@ const AddPassword = () => {
               <path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" />
             </svg>
             <input
-              type="email"
+              type="text"
               className="grow bg-transparent focus:outline-none text-white"
-              placeholder="Email"
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
             />
           </label>
 
@@ -52,6 +85,7 @@ const AddPassword = () => {
               type="password"
               className="grow bg-transparent focus:outline-none text-white"
               placeholder="Password"
+              value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
                 setPassrate(e.target.value.length);
@@ -60,18 +94,22 @@ const AddPassword = () => {
           </label>
 
           <progress
-            className=" progress progress-success w-full h-2 "
-            value= {passrate}
+            className="progress progress-success w-full h-2"
+            value={passrate}
             max="100"
           ></progress>
 
-          <select className="select select-bordered w-full p-2 border rounded-lg bg-gray-700 text-white">
-            <option disabled selected>
+          <select
+            className="select select-bordered w-full p-2 border rounded-lg bg-gray-700 text-white"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="" disabled>
               Category
             </option>
-            <option>Work</option>
-            <option>Personal</option>
-            <option>Other</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Other">Other</option>
           </select>
 
           {isFormFilled && (
@@ -84,6 +122,7 @@ const AddPassword = () => {
           )}
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };
