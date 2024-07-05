@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "crypto-js": "^4.2.0"
+    "@enzoic/enzoic-react-password-strength": "^2.1.1",
+    "crypto-js": "^4.2.0",
+    "react-password-strength": "^2.4.0",
+    "react-tooltip": "^5.27.1"
   }
 }

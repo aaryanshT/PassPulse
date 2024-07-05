@@ -4,13 +4,26 @@ import { collection, addDoc } from "firebase/firestore";
 import CryptoJS from "crypto-js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import zxcvbn from "zxcvbn";
 
 const AddPassword = () => {
   const [website, setWebsite] = useState("");
   const [password, setPassword] = useState("");
   const [category, setCategory] = useState("");
-  const isFormFilled = website && password && category;
-  const [passrate, setPassrate] = useState(0);
+  const isFormFilled = website.trim() && password.trim() && category.trim();
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [strengthText, setStrengthText] = useState("");
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    const result = zxcvbn(newPassword);
+    setPasswordStrength(result.score * 25);
+    
+    // Set strength text based on score
+    const strengthLabels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
+    setStrengthText(strengthLabels[result.score]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,15 +36,15 @@ const AddPassword = () => {
     try {
       const docRef = await addDoc(collection(firestore, "passwords"), newPassword);
       console.log("Document written with ID:", docRef.id);
-      toast.success("Password for " + website + " added successfully!", {
+      toast.success(`Password for ${website} added successfully!`, {
         position: "bottom-right",
         autoClose: 5000,
-       
       });
       setWebsite("");
       setPassword("");
       setCategory("");
-      setPassrate(0);
+      setPasswordStrength(0);
+      setStrengthText("");
     } catch (e) {
       console.error("Error adding document: ", e);
       toast.error("Error adding Password! ", {
@@ -42,14 +55,14 @@ const AddPassword = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="card transform transition duration-300 shadow-xl hover:shadow-2xl w-80 h-auto rounded-lg p-6">
-        <h2 className="card-title text-xl font-semibold text-center mb-6 text-green-500">
+    <div className="flex items-center justify-center min-h-screen bg-gray-900">
+      <div className="card transform transition duration-300 shadow-xl hover:shadow-2xl w-80 h-auto rounded-lg p-6 bg-gray-800">
+        <h2 className="text-xl font-semibold text-center mb-6 text-green-500">
           Add New Password
         </h2>
 
-        <form className="space-y-4 form" onSubmit={handleSubmit}>
-          <label className="input input-bordered flex items-center gap-2 p-2 border rounded-lg bg-gray-700 text-white">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="input input-bordered flex items-center gap-2 p-2 border rounded-lg bg-gray-700 text-white">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
@@ -66,9 +79,9 @@ const AddPassword = () => {
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
             />
-          </label>
+          </div>
 
-          <label className="input input-bordered flex items-center gap-2 p-2 border rounded-lg bg-gray-700 text-white">
+          <div className="input input-bordered flex items-center gap-2 p-2 border rounded-lg bg-gray-700 text-white">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
@@ -86,18 +99,24 @@ const AddPassword = () => {
               className="grow bg-transparent focus:outline-none text-white"
               placeholder="Password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPassrate(e.target.value.length);
-              }}
+              onChange={handlePasswordChange}
             />
-          </label>
+          </div>
 
-          <progress
-            className="progress progress-success w-full h-2"
-            value={passrate}
-            max="100"
-          ></progress>
+          <div 
+            className="w-full bg-gray-700 rounded-lg h-2"
+            title={`Password Strength: ${strengthText}`}
+          >
+            <div
+              className={`h-full rounded-lg ${
+                passwordStrength <= 25 ? 'bg-red-500' : 
+                passwordStrength <= 50 ? 'bg-orange-500' : 
+                passwordStrength <= 75 ? 'bg-yellow-500' : 'bg-green-500'
+              }`}
+              style={{ width: `${passwordStrength}%` }}
+            ></div>
+          </div>
+          <div className="text-sm text-white">{strengthText}</div>
 
           <select
             className="select select-bordered w-full p-2 border rounded-lg bg-gray-700 text-white"
